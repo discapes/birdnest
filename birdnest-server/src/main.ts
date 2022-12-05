@@ -17,6 +17,14 @@ type Drone = {
   positionX: string;
   altitude: string;
 };
+type User = {
+  pilotId: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  createdDt: string;
+  email: string;
+};
 
 type XMLDrone = {
   [Prop in keyof Drone]: {
@@ -41,19 +49,57 @@ function removeXMLArtifacts(xmlDrone: XMLDrone): Drone {
   );
 }
 
-const server = http.createServer(async (req, res) => {
+let rulebreakers = new Map<User["pilotId"], User>();
+let drones: Drone[] = [];
+
+async function getRulebreakers() {
   const xml = await fetch(
     "https://assignments.reaktor.com/birdnest/drones"
   ).then((res) => res.text());
   const result = <XMLResult>xml2js(xml, { compact: true });
-  const drones = result.report.capture.drone.map((drone) =>
+  drones = result.report.capture.drone.map((drone) =>
     removeXMLArtifacts(drone)
   );
 
+  const badDrones = drones.filter((d) => nestDistance(d) < 100);
+  const badUsers = <User[]>await Promise.all(
+    badDrones.map(async (d) => {
+      const userData = <User>(
+        await fetch(
+          `https://assignments.reaktor.com/birdnest/pilots/${d.serialNumber}`
+        ).then((res) => res.json())
+      );
+      return {
+        ...userData,
+        dist: nestDistance(d),
+      };
+    })
+  );
+  rulebreakers.clear();
+  badUsers.forEach((u) => rulebreakers.set(u.pilotId, u));
+}
+
+function nestDistance(d: Drone) {
+  return Math.sqrt(
+    (+d.positionX / 1000 - 250) ** 2 + (+d.positionY / 1000 - 250) ** 2
+  );
+}
+
+setInterval(getRulebreakers, 2000);
+
+const server = http.createServer(async (req, res) => {
   res.statusCode = 200;
-  res.setHeader("Content-Type", "text/plain");
+  res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.end(JSON.stringify(drones, null, 2));
+
+  switch (req.url) {
+    case "/drones":
+      res.end(JSON.stringify(drones));
+      break;
+    case "/rulebreakers":
+      res.end(JSON.stringify([...rulebreakers.values()]));
+      break;
+  }
 });
 
 server.listen(port, hostname, () => {
