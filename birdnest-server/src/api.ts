@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import { xml2js } from "xml-js";
-import type { Drone, User } from "./types";
+import type { Drone, User } from "./types.js";
 
 export const DRONES_ENDPOINT =
   "https://assignments.reaktor.com/birdnest/drones";
@@ -35,7 +35,7 @@ export async function getUserData(
   );
 }
 
-// replace key: { _text: "foo" } with key: "foo"
+// replaces { key: { _text: "foo" } } with { key: "foo" }
 function removeXMLArtifacts(xmlDrone: XMLDrone): Drone {
   return <Drone>(
     Object.fromEntries(

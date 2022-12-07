@@ -1,15 +1,17 @@
-import { NEST_POSITION } from "./main";
-import { Drone } from "./types";
+import { NEST_POSITION } from "./main.js";
+import { Drone } from "./types.js";
 
 export function distanceFromNest(d: Drone) {
   return distanceBetweenPoints(
     +d.positionX / 1000,
+    // drone positions are in millimeters
     +d.positionY / 1000,
     NEST_POSITION.x,
     NEST_POSITION.y
   );
 }
 
+// Pythagorean theorem
 export function distanceBetweenPoints(
   x1: number,
   y1: number,
