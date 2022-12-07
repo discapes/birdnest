@@ -48,8 +48,9 @@
     ctx.stroke();
 
     ctx.fillStyle = "red";
-    ctx.font = "30px arial";
-    ctx.fillText("NDZ", 250 - 25, 250 + 10);
+    ctx.font = "15px arial";
+    ctx.fillRect(250 - 5, 250 - 5, 10, 10);
+    ctx.fillText("NDZ", 250, 250 - 10);
 
     ctx.fillStyle = "white";
     ctx.font = "14px arial";
@@ -60,6 +61,10 @@
         4,
         4
       );
+      ctx.beginPath();
+      ctx.moveTo(+drone.positionX / 1000, +drone.positionY / 1000);
+      ctx.lineTo(250, 250);
+      ctx.stroke();
       ctx.fillText(
         drone.serialNumber,
         +drone.positionX / 1000 + 10,

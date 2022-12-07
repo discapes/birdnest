@@ -1,103 +1,90 @@
 import http from "node:http";
-import { xml2js } from "xml-js";
-import fetch from "node-fetch";
+import { getDrones, getUserData } from "./api";
+import { distanceFromNest, droneInNDZ } from "./math";
+import { Drone, User } from "./types";
 
 const hostname = "127.0.0.1";
 const port = 3000;
+export const NEST_POSITION = { x: 250, y: 250 };
+const OFFENDER_RETENTION_MINUTES = 10;
+const POLL_SECONDS = 2;
 
-type Drone = {
-  serialNumber: string;
-  model: string;
-  manufacturer: string;
-  mac: string;
-  ipv4: string;
-  ipv6: string;
-  firmware: string;
-  positionY: string;
-  positionX: string;
-  altitude: string;
-};
-type User = {
-  pilotId: string;
-  firstName: string;
-  lastName: string;
-  phoneNumber: string;
-  createdDt: string;
-  email: string;
+type Snapshot = {
+  drones: Drone[];
+  badUserDataBySN: Map<Drone["serialNumber"], User>;
+  badDistancesBySN: Map<Drone["serialNumber"], number>;
 };
 
-type XMLDrone = {
-  [Prop in keyof Drone]: {
-    _text: string;
+type OffenderRecord = {
+  userData: User;
+  distance: number;
+  deleteTimer: NodeJS.Timeout;
+};
+
+async function createSnapshot(): Promise<Snapshot> {
+  const drones = await getDrones();
+  const badDrones = drones.filter(droneInNDZ);
+  const badDistancesBySN = new Map(
+    badDrones.map((d) => [d.serialNumber, distanceFromNest(d)])
+  );
+
+  const badUserDataBySNPromises = badDrones.map((d) =>
+    getUserData(d.serialNumber).then((ud) => [d.serialNumber, ud] as const)
+  );
+  const badUserDataBySN = new Map(await Promise.all(badUserDataBySNPromises));
+
+  return {
+    drones,
+    badUserDataBySN,
+    badDistancesBySN,
   };
-};
-
-type XMLResult = {
-  report: {
-    capture: {
-      drone: XMLDrone[];
-    };
-  };
-};
-
-// replace key: { _text: "foo" } with key: "foo"
-function removeXMLArtifacts(xmlDrone: XMLDrone): Drone {
-  return <Drone>(
-    Object.fromEntries(
-      Object.entries(xmlDrone).map(([key, value]) => [key, value._text])
-    )
-  );
 }
 
-let rulebreakers = new Map<User["pilotId"], User>();
-let drones: Drone[] = [];
+function updateRecordsFromSnapshot(
+  snapshot: Snapshot,
+  offendersBySN: Map<Drone["serialNumber"], OffenderRecord>
+) {
+  snapshot.badUserDataBySN.forEach((userData, sn) => {
+    let distance = latestSnapshot.badDistancesBySN.get(sn);
 
-async function getRulebreakers() {
-  const xml = await fetch(
-    "https://assignments.reaktor.com/birdnest/drones"
-  ).then((res) => res.text());
-  const result = <XMLResult>xml2js(xml, { compact: true });
-  drones = result.report.capture.drone.map((drone) =>
-    removeXMLArtifacts(drone)
-  );
+    const existingEntry = offendersBySN.get(sn);
+    if (existingEntry) {
+      clearTimeout(existingEntry.deleteTimer);
+      distance = Math.max(existingEntry.distance, distance);
+    }
 
-  const badDrones = drones.filter((d) => nestDistance(d) < 100);
-  const badUsers = <User[]>await Promise.all(
-    badDrones.map(async (d) => {
-      const userData = <User>(
-        await fetch(
-          `https://assignments.reaktor.com/birdnest/pilots/${d.serialNumber}`
-        ).then((res) => res.json())
-      );
-      return {
-        ...userData,
-        dist: nestDistance(d),
-      };
-    })
-  );
-  rulebreakers.clear();
-  badUsers.forEach((u) => rulebreakers.set(u.pilotId, u));
+    const deleteTimer = setTimeout(
+      () => offendersBySN.delete(sn),
+      OFFENDER_RETENTION_MINUTES * 60 * 1000
+    );
+    offendersBySN.set(sn, { distance, userData, deleteTimer });
+  });
 }
 
-function nestDistance(d: Drone) {
-  return Math.sqrt(
-    (+d.positionX / 1000 - 250) ** 2 + (+d.positionY / 1000 - 250) ** 2
-  );
-}
+let offendersBySN = new Map<Drone["serialNumber"], OffenderRecord>();
+let latestSnapshot: Snapshot;
 
-setInterval(getRulebreakers, 2000);
+setInterval(async () => {
+  latestSnapshot = await createSnapshot();
+  updateRecordsFromSnapshot(latestSnapshot, offendersBySN);
+}, POLL_SECONDS * 1000);
 
 const server = http.createServer(async (req, res) => {
-  res.statusCode = 200;
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Access-Control-Allow-Origin", "*");
 
   switch (req.url) {
-    case "/drones":
-      res.end(JSON.stringify(drones));
+    case "/snapshot":
+      res.statusCode = 200;
+      res.end(JSON.stringify(latestSnapshot, JSONMapReplacer));
       break;
-    case "/rulebreakers":
-      res.end(JSON.stringify([...rulebreakers.values()]));
+    case "/history":
+      res.statusCode = 200;
+      res.end(JSON.stringify(offendersBySN, JSONMapReplacer));
+      break;
+    default:
+      res.statusCode = 400;
+      res.end();
       break;
   }
 });
@@ -105,3 +92,7 @@ const server = http.createServer(async (req, res) => {
 server.listen(port, hostname, () => {
   console.log(`Server running at http://${hostname}:${port}/`);
 });
+
+function JSONMapReplacer() {}
+
+function JSONMapReviver() {}
