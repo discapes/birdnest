@@ -1,6 +1,6 @@
-import fetch from "node-fetch";
 import { xml2js } from "xml-js";
-import type { Drone, User } from "./types.js";
+import type { Drone, User } from "../../shared/core.js";
+import axios from "axios";
 
 export const DRONES_ENDPOINT =
   "https://assignments.reaktor.com/birdnest/drones";
@@ -22,17 +22,22 @@ type XMLResult = {
 };
 
 export async function getDrones(): Promise<Drone[]> {
-  const xml = await fetch(DRONES_ENDPOINT).then((res) => res.text());
+  const xml = await axios.get(DRONES_ENDPOINT).then((res) => res.data);
+  // .catch((e) => null);
+  // if (xml == null) return [];
   const result = <XMLResult>xml2js(xml, { compact: true });
   return result.report.capture.drone.map((drone) => removeXMLArtifacts(drone));
 }
 
 export async function getUserData(
   serialNumber: Drone["serialNumber"]
-): Promise<User> {
-  return <User>(
-    await fetch(`${PILOTS_ENDPOINT}${serialNumber}`).then((res) => res.json())
+): Promise<User | null> {
+  return <User | null>(
+    await axios
+      .get(`${PILOTS_ENDPOINT}${serialNumber}`)
+      .then((res) => (res.status == 404 ? "null" : res.data))
   );
+  // .catch((e) => null);
 }
 
 // replaces { key: { _text: "foo" } } with { key: "foo" }

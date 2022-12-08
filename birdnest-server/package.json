@@ -4,11 +4,11 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "dev": "tsc-watch --onSuccess \"node ./dist/main.js\""
+    "dev": "tsc-watch --onSuccess \"node ./dist/birdnest-server/src/main.js\""
   },
   "author": "Miika Tuominen",
   "dependencies": {
-    "node-fetch": "^3.3.0",
+    "axios": "^1.2.1",
     "prettier": "^2.8.0",
     "tsc-watch": "^5.0.3",
     "xml-js": "^1.6.11"

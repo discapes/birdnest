@@ -1,5 +1,4 @@
-import { NEST_POSITION } from "./main.js";
-import { Drone } from "./types.js";
+import { Drone, NEST_POSITION } from "../../shared/core.js";
 
 export function distanceFromNest(d: Drone) {
   return distanceBetweenPoints(

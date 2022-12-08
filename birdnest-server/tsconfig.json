@@ -14,7 +14,8 @@
 		"strict": true
 	},
 	"include": [
-		"src/**/*"
+		"src/**/*",
+		"../shared/core.ts"
 	],
 	"exclude": [
 		"node_modules",
