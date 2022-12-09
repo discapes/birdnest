@@ -1,2 +1,3 @@
 */node_modules
 birdnest-server/dist
+*.pem

@@ -1,3 +1,4 @@
+import https from "node:https";
 import http from "node:http";
 import {
   OffenderRecords,
@@ -7,9 +8,10 @@ import {
 } from "../../shared/core.js";
 import { getDrones, getUserData } from "./api.js";
 import { distanceFromNest, droneInNDZ } from "../../shared/math.js";
+import { readFileSync } from "fs"; 
 
-const hostname = "127.0.0.1";
-const port = 3000;
+const hostname = "0.0.0.0";
+const port = 8443;
 
 // check /shared/core for more info on the architecture
 
@@ -40,10 +42,31 @@ setInterval(async () => {
   offendersBySN = updateRecordsFromSnapshot(latestSnapshot, offendersBySN);
 }, POLL_SECONDS * 1000);
 
-// TODO switch to HTTPS
-const server = http.createServer(async (req, res) => {
+let options: null | { key: string; cert: string; } = null;
+
+try {
+  let options = {
+    key: readFileSync('key.pem'),
+    cert: readFileSync('cert.pem')
+  };
+} catch (e) {
+  console.log("Couldn't read key.pem or cert.pem, falling back to http");
+}
+
+const protocol = options ? https : http;
+
+const server = protocol.createServer(options, async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "https://birdnest-topaz.vercel.app");
+  if (req.method == "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Max-Age", "3600");
+    res.setHeader("Access-Control-Allow-Private-Network", "true");
+    res.statusCode = 200;
+    res.end();
+    return;
+  }
+
   res.setHeader("Content-Type", "application/json");
-  res.setHeader("Access-Control-Allow-Origin", "*");
 
   switch (req.url) {
     case "/snapshot.json":
@@ -62,7 +85,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`);
+  console.log(`Server running at https://${hostname}:${port}/`);
 });
 
 // preserves maps, throws away NodeJS.Timeout, so we can send the records and snapshots to the client
