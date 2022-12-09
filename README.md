@@ -23,7 +23,7 @@ The frontend can also be deployed to platforms like Vercel or Cloudflare pages. 
 from `shared/core.ts`:
 
 > The realtime drone and offenders' user data from the endpoint are compiled into a `Snapshot` every two seconds,
-> which clients poll from the server at the same interval.
+> which clients poll from the server at the almost the same interval.
 
 > The records of offenders in the last 10 minutes are kept in a
 > `Map<Drone["serialNumber"], OffenderRecord>` that's sent to clients when they connect.

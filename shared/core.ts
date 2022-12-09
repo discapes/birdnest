@@ -48,7 +48,7 @@ export type Snapshot = {
 export type OffenderRecord = {
   userData: User | null;
   distance: number;
-  deleteTimer?: NodeJS.Timeout; // this is removed for transport
+  deleteTimer?: NodeJS.Timeout; // timer for deleting itself after 10 minutes, removed by JSON replacer, remade on client
   deleteDate: Date;
 };
 
@@ -66,9 +66,9 @@ export function updateRecordsFromSnapshot(
 
     const existingEntry = offendersBySN.get(sn);
     if (existingEntry) {
-      // we persist the closest distance
       clearTimeout(existingEntry.deleteTimer);
       distance = Math.min(existingEntry.distance, distance);
+      // we persist the closest distance
     }
 
     const deleteTimer = setTimeout(
@@ -81,4 +81,34 @@ export function updateRecordsFromSnapshot(
     offendersBySN.set(sn, { distance, userData, deleteTimer, deleteDate });
   });
   return offendersBySN;
+}
+
+// preserves maps, throws away NodeJS.Timeout, so we can send the records and snapshots to the client
+export function JSONReplacer(key: string, value: any) {
+  if (value?.constructor?.name === "Timeout") return undefined;
+  if (value instanceof Map) {
+    return {
+      dataType: "Map",
+      value: Array.from(value.entries()), // or with spread: value: [...value]
+    };
+  } else {
+    return value;
+  }
+}
+
+export function JSONReviver(key: string, value: any) {
+  if (typeof value === "object" && value !== null) {
+    if (value.dataType === "Map") {
+      return new Map(value.value);
+    }
+  } else if (typeof value === "string" && isIsoDate(value)) {
+    return new Date(value);
+  }
+  return value;
+}
+
+function isIsoDate(value: string) {
+  return /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*))(?:Z|(\+|-)([\d|:]*))?$/.exec(
+    value
+  );
 }

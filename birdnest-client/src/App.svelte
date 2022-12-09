@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
     POLL_SECONDS,
     updateRecordsFromSnapshot,
@@ -7,30 +6,47 @@
     type Snapshot,
   } from "../../shared/core";
   import DroneMap from "./DroneMap.svelte";
-  import { getSnapshot } from "./lib/api";
+  import { getOffenders, getSnapshot } from "./lib/api";
   import OffendersTable from "./OffendersTable.svelte";
 
-  let offendersBySN: OffenderRecords = new Map();
+  let offendersBySN: OffenderRecords;
   let latestSnapshot: Snapshot;
 
-  onMount(async () => {
-    const poll = async () => {
-      latestSnapshot = await getSnapshot();
-      offendersBySN = updateRecordsFromSnapshot(latestSnapshot, offendersBySN);
-    };
-    setInterval(poll, POLL_SECONDS * 1000);
-    poll();
-  });
+  // initialize the 10-min records and start polling
+  Promise.all([getOffenders(), getSnapshot()]).then(
+    ([_offendersBySN, _snapshot]) => {
+      latestSnapshot = _snapshot;
+      offendersBySN = _offendersBySN;
+      // we need to set the record expiration timers again as they can't be transported
+      offendersBySN.forEach((rec, sn) => {
+        rec.deleteTimer = setTimeout(
+          () => offendersBySN.delete(sn),
+          rec.deleteDate.getTime() - Date.now()
+        );
+      });
+
+      setInterval(async () => {
+        latestSnapshot = await getSnapshot();
+        offendersBySN = updateRecordsFromSnapshot(
+          latestSnapshot,
+          offendersBySN
+        );
+      }, POLL_SECONDS * 750); // 750 instead of a 1000 so we get all data points regardless of latency
+    }
+  );
 </script>
 
-<main class="flex gap-10 justify-center w-full m-10 border border-white p-10">
-  {#if latestSnapshot}
-    <DroneMap snapshot={latestSnapshot} />
-  {/if}
-  {#if offendersBySN}
-    <OffendersTable records={offendersBySN} />
-  {/if}
-</main>
+<div class="overflow-auto p-10">
+  <main
+    class="inline-flex flex-wrap min-w-full gap-10 justify-center border border-white p-10">
+    {#if latestSnapshot}
+      <DroneMap snapshot={latestSnapshot} />
+    {/if}
+    {#if offendersBySN}
+      <OffendersTable records={offendersBySN} />
+    {/if}
+  </main>
+</div>
 
 <style>
   @tailwind base;

@@ -1,6 +1,7 @@
 import https from "node:https";
 import http from "node:http";
 import {
+  JSONReplacer,
   OffenderRecords,
   POLL_SECONDS,
   Snapshot,
@@ -12,8 +13,6 @@ import { readFileSync } from "fs";
 
 const hostname = "0.0.0.0";
 const port = 8443;
-
-// check /shared/core for more info on the architecture
 
 // We create this snapshot every POLL_SECONDS to get up to date info
 async function createSnapshot(): Promise<Snapshot> {
@@ -50,7 +49,6 @@ async function handler(
   if (req.method == "OPTIONS") {
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
     res.setHeader("Access-Control-Max-Age", "3600");
-    res.setHeader("Access-Control-Allow-Private-Network", "true");
     res.statusCode = 200;
     res.end();
     return;
@@ -93,16 +91,3 @@ server.listen(port, hostname, () => {
     `Server running at ${sslOptions ? "https" : "http"}://${hostname}:${port}/`
   );
 });
-
-// preserves maps, throws away NodeJS.Timeout, so we can send the records and snapshots to the client
-function JSONReplacer(key: string, value: any) {
-  if (value?.constructor?.name === "Timeout") return undefined;
-  if (value instanceof Map) {
-    return {
-      dataType: "Map",
-      value: Array.from(value.entries()), // or with spread: value: [...value]
-    };
-  } else {
-    return value;
-  }
-}
