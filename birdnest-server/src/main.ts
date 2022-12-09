@@ -8,7 +8,7 @@ import {
 } from "../../shared/core.js";
 import { getDrones, getUserData } from "./api.js";
 import { distanceFromNest, droneInNDZ } from "../../shared/math.js";
-import { readFileSync } from "fs"; 
+import { readFileSync } from "fs";
 
 const hostname = "0.0.0.0";
 const port = 8443;
@@ -42,21 +42,14 @@ setInterval(async () => {
   offendersBySN = updateRecordsFromSnapshot(latestSnapshot, offendersBySN);
 }, POLL_SECONDS * 1000);
 
-let options: null | { key: string; cert: string; } = null;
-
-try {
-  let options = {
-    key: readFileSync('key.pem'),
-    cert: readFileSync('cert.pem')
-  };
-} catch (e) {
-  console.log("Couldn't read key.pem or cert.pem, falling back to http");
-}
-
-const protocol = options ? https : http;
-
-const server = protocol.createServer(options, async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "https://birdnest-topaz.vercel.app");
+async function handler(
+  req: http.IncomingMessage,
+  res: http.ServerResponse<http.IncomingMessage>
+) {
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    "https://birdnest-topaz.vercel.app"
+  );
   if (req.method == "OPTIONS") {
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
     res.setHeader("Access-Control-Max-Age", "3600");
@@ -82,10 +75,26 @@ const server = protocol.createServer(options, async (req, res) => {
       res.end();
       break;
   }
-});
+}
+
+let sslOptions: null | { key: Buffer; cert: Buffer } = null;
+try {
+  sslOptions = {
+    key: readFileSync("key.pem"),
+    cert: readFileSync("cert.pem"),
+  };
+} catch (e) {
+  console.log("Couldn't read key.pem or cert.pem, falling back to http");
+}
+
+const server = sslOptions
+  ? https.createServer(sslOptions, handler)
+  : http.createServer(handler);
 
 server.listen(port, hostname, () => {
-  console.log(`Server running at https://${hostname}:${port}/`);
+  console.log(
+    `Server running at ${sslOptions ? "https" : "http"}://${hostname}:${port}/`
+  );
 });
 
 // preserves maps, throws away NodeJS.Timeout, so we can send the records and snapshots to the client

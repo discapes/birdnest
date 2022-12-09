@@ -11,7 +11,7 @@ export default defineConfig({
       include: ["src/**/*.ts", "src/**/*.svelte"],
       values: {
         __SERVER_URL__: JSON.stringify(
-          process.env.SERVER_URL || "http://127.0.0.1:3000"
+          process.env.SERVER_URL || "http://127.0.0.1:8443"
         ),
       },
     }),
