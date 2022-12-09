@@ -54,7 +54,9 @@ export type OffenderRecord = {
 
 export type OffenderRecords = Map<Drone["serialNumber"], OffenderRecord>;
 
+// runs on both client and server
 // from the snapshot just fetched, we can update the offender records and return them
+// also adds a timer to delete expired records
 export function updateRecordsFromSnapshot(
   snapshot: Snapshot,
   offendersBySN: OffenderRecords
@@ -64,8 +66,9 @@ export function updateRecordsFromSnapshot(
 
     const existingEntry = offendersBySN.get(sn);
     if (existingEntry) {
+      // we persist the closest distance
       clearTimeout(existingEntry.deleteTimer);
-      distance = Math.max(existingEntry.distance, distance);
+      distance = Math.min(existingEntry.distance, distance);
     }
 
     const deleteTimer = setTimeout(

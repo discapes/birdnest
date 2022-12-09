@@ -9,7 +9,7 @@
     <th>Name</th>
     <th>Email</th>
     <th>Phone</th>
-    <th>Dist</th>
+    <th>Dist.</th>
   </tr>
   {#each Array.from(records.values()) as rec}
     <tr>
@@ -20,3 +20,11 @@
     </tr>
   {/each}
 </table>
+
+<style>
+  table tr td,
+  table tr th {
+    border: 1px solid white;
+    padding: 10px;
+  }
+</style>

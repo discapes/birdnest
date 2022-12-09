@@ -15,7 +15,8 @@
 	},
 	"include": [
 		"src/**/*",
-		"../shared/core.ts"
+		"../shared/core.ts",
+		"../shared/math.ts"
 	],
 	"exclude": [
 		"node_modules",

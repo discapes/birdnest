@@ -1,4 +1,4 @@
-import { Drone, NEST_POSITION } from "../../shared/core.js";
+import { Drone, NEST_POSITION } from "./core.js";
 
 export function distanceFromNest(d: Drone) {
   return distanceBetweenPoints(
@@ -18,6 +18,10 @@ export function distanceBetweenPoints(
   y2: number
 ) {
   return Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
+}
+
+export function midPoint(x1: number, y1: number, x2: number, y2: number) {
+  return { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
 }
 
 export function droneInNDZ(d: Drone) {

@@ -13,11 +13,9 @@
   let offendersBySN: OffenderRecords = new Map();
   let latestSnapshot: Snapshot;
 
-  // TODO timers again
   onMount(async () => {
     const poll = async () => {
       latestSnapshot = await getSnapshot();
-      console.log(latestSnapshot);
       offendersBySN = updateRecordsFromSnapshot(latestSnapshot, offendersBySN);
     };
     setInterval(poll, POLL_SECONDS * 1000);
@@ -37,10 +35,4 @@
 <style>
   @tailwind base;
   @tailwind utilities;
-
-  table tr td,
-  table tr th {
-    border: 1px solid white;
-    padding: 10px;
-  }
 </style>

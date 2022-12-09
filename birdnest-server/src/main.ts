@@ -6,7 +6,7 @@ import {
   updateRecordsFromSnapshot,
 } from "../../shared/core.js";
 import { getDrones, getUserData } from "./api.js";
-import { distanceFromNest, droneInNDZ } from "./math.js";
+import { distanceFromNest, droneInNDZ } from "../../shared/math.js";
 
 const hostname = "127.0.0.1";
 const port = 3000;

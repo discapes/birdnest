@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { Snapshot } from "../../shared/core";
+  import { NEST_POSITION, type Snapshot } from "../../shared/core.js";
+  import { midPoint } from "../../shared/math.js";
 
   export let snapshot: Snapshot;
 
@@ -27,28 +28,44 @@
     ctx.arc(250, 250, 100, 0, Math.PI * 2);
     ctx.stroke();
 
+    ctx.fillStyle = "green";
+    ctx.fillRect(NEST_POSITION.x - 5, NEST_POSITION.y - 5, 10, 10);
     ctx.fillStyle = "red";
     ctx.font = "15px arial";
-    ctx.fillRect(250 - 5, 250 - 5, 10, 10);
-    ctx.fillText("NDZ", 250, 250 - 10);
+    ctx.fillText("NDZ", NEST_POSITION.x, NEST_POSITION.y - 10);
 
     ctx.fillStyle = "white";
     ctx.font = "14px arial";
     snapshot.drones.forEach((drone) => {
-      ctx.fillRect(
-        +drone.positionX / 1000 - 2,
-        +drone.positionY / 1000 - 2,
-        4,
-        4
-      );
+      const dx = +drone.positionX / 1000;
+      const dy = +drone.positionY / 1000;
+
+      // draw drone dot and prepare line
+      ctx.fillRect(dx - 2, dy - 2, 4, 4);
       ctx.beginPath();
-      ctx.moveTo(+drone.positionX / 1000, +drone.positionY / 1000);
+      ctx.moveTo(dx, dy);
       ctx.lineTo(250, 250);
-      ctx.stroke();
+
+      if (snapshot.badDistancesBySN.has(drone.serialNumber)) {
+        // for violators
+        ctx.strokeStyle = "red";
+        ctx.stroke(); // draw bright line
+        const mp = midPoint(dx, dy, NEST_POSITION.x, NEST_POSITION.y);
+        ctx.fillText(
+          snapshot.badDistancesBySN.get(drone.serialNumber)!.toFixed() + "m",
+          mp.x,
+          mp.y
+        ); // draw distance
+      } else {
+        ctx.strokeStyle = "darkred";
+        ctx.stroke(); // draw dark line
+      }
+
       ctx.fillText(
-        snapshot.badUserDataBySN.get(drone.serialNumber)?.lastName ?? "404",
-        +drone.positionX / 1000 + 10,
-        +drone.positionY / 1000
+        snapshot.badUserDataBySN.get(drone.serialNumber)?.lastName ??
+          drone.serialNumber.slice(0, 6) + ".",
+        dx + 10,
+        dy
       );
     });
   }
