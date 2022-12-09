@@ -71,8 +71,14 @@
   }
 </script>
 
-<canvas
-  class="border-white border w-[500px] h-[500px]"
-  width="500"
-  height="500"
-  bind:this={canvas} />
+<div class="w-[500px] h-[500px] relative">
+  <p class="absolute left-0 top-0 mx-1 text-gray-400">(0, 0)</p>
+  <p class="absolute right-0 top-0 mx-1 text-gray-400">(500, 0)</p>
+  <p class="absolute right-0 bottom-0 mx-1 text-gray-400">(500, 500)</p>
+  <p class="absolute left-0 bottom-0 mx-1 text-gray-400">(0, 500)</p>
+  <canvas
+    class="border-white border w-[500px] h-[500px] -z-10"
+    width="500"
+    height="500"
+    bind:this={canvas} />
+</div>

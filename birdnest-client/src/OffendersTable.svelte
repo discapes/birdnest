@@ -4,7 +4,7 @@
   export let records: OffenderRecords;
 </script>
 
-<div class="h-[500px] overflow-y-auto border border-white">
+<div class="h-[500px] overflow-y-auto border-white border-y">
   <table>
     <tr class="h-5">
       <th>Name</th>
@@ -28,5 +28,11 @@
   table tr th {
     border: 1px solid white;
     padding: 10px;
+  }
+  table tr th {
+    border-top: 0px;
+  }
+  table tr:last-child td {
+    border-bottom: 0px;
   }
 </style>
