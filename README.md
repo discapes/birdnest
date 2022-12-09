@@ -1,14 +1,22 @@
 # Birdnest
 
-[For the reaktor pre-assignment](https://assignments.reaktor.com/birdnest)
+This project is for a [Reaktor pre-assignment](https://assignments.reaktor.com/birdnest).
+
+You can see it deployed [here](https://birdnest-topaz.vercel.app/).
 
 This project consists of a frontend made with Svelte (a framework similar to React) and a node.js backend with dependencies on `xml-js` and `axios`. There is some shared code in the `shared` folder.
 
 ![screenshot](https://i.imgur.com/oKuOLr2.png)
 
-### Develop locally
+### Developing locally
 
-In both `birdnest-client/` and `birdnest-server/`, run `npm install` and `npm run dev`.
+In both `birdnest-client/` and `birdnest-server/`, run `npm install` and `npm run dev`. The server automatically uses https if it sees a `cert.pem` and a `key.pem` in it's folder.
+
+### Deployment
+
+You can host the backend on any cloud provider with node 16. Set the environment variable `ALLOW_ORIGIN` to set CORS restrictions (default is "\*").
+
+The frontend can also be deployed to platforms like Vercel or Cloudflare pages. Set the environment variable `SERVER_URL` to specify the server address and port.
 
 ### About the architecture
 

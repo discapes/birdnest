@@ -46,10 +46,7 @@ async function handler(
   req: http.IncomingMessage,
   res: http.ServerResponse<http.IncomingMessage>
 ) {
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    "https://birdnest-topaz.vercel.app"
-  );
+  res.setHeader("Access-Control-Allow-Origin", process.env.ALLOW_ORIGIN || "*");
   if (req.method == "OPTIONS") {
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
     res.setHeader("Access-Control-Max-Age", "3600");
