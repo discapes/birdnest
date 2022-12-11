@@ -33,7 +33,7 @@
           latestSnapshot,
           offendersBySN
         );
-      }, POLL_SECONDS / 2);
+      }, (POLL_SECONDS * 1000) / 2);
     }
   );
 
