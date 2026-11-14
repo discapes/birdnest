@@ -9,11 +9,11 @@
   "author": "Miika Tuominen",
   "dependencies": {
     "axios": "^1.2.1",
-    "prettier": "^2.8.0",
-    "tsc-watch": "^5.0.3",
+    "prettier": "^3.0.0",
+    "tsc-watch": "^7.0.0",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
-    "@types/node": "^18.11.10"
+    "@types/node": "^26.0.0"
   }
 }
